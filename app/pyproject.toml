@@ -10,7 +10,6 @@ classifiers = [
 dependencies = [
     "litestar[standard]",
     "minimalmodbus",
-    "bluerobotics-navigator",
     "gpiozero",
     "requests",
     "pyserial",

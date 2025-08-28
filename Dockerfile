@@ -7,13 +7,22 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     libssl-dev \
     pkg-config \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the application
 COPY app /app
 
-# Install Python dependencies
-RUN python -m pip install /app --extra-index-url https://www.piwheels.org/simple
+# Install Python dependencies first (without the problematic ones)
+RUN python -m pip install --upgrade pip && \
+    python -m pip install litestar[standard] minimalmodbus gpiozero requests pyserial
+
+# Install Blue Robotics Navigator from source (if available)
+RUN python -m pip install git+https://github.com/bluerobotics/blueos-python.git#subdirectory=blueos-python-navigator || \
+    echo "Navigator package not available, will use fallback methods"
+
+# Install the app in development mode
+RUN python -m pip install -e /app
 
 EXPOSE 8000/tcp
 
@@ -69,4 +78,4 @@ LABEL links='{\
     }'
 LABEL requirements="core >= 1.1"
 
-ENTRYPOINT litestar run --host 0.0.0.0
+ENTRYPOINT ["litestar", "run", "--host", "0.0.0.0"]
