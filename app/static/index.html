@@ -1,61 +1,374 @@
-<html>
-    <head>
-        <title>QuickStart</title>
-        <script type="text/javascript" after defer>
-            // setup
-            function window_url() {
-                return window.location.protocol + '//' + window.location.hostname;
-            };
-            async function frontend_perm_load() {
-                var response = await fetch(window_url() + "/bag/v1.0/get/quickstart_frontend_perm_count");
-                if (response.status === 400) {
-                    return 0; // count not already stored, start from 0/unclicked
-                }
-                return (await response.json())["value"];
-            };
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BR Thruster Destroyer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .status-running { background-color: #28a745; }
+        .status-stopped { background-color: #dc3545; }
+        .status-error { background-color: #ffc107; }
+        .sensor-value {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .control-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        .sensor-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">
+                    <i class="bi bi-propeller"></i> BR Thruster Destroyer
+                </h1>
+                <p class="text-center text-muted">BlueOS Extension for Thruster Testing and Data Logging</p>
+            </div>
+        </div>
 
-            // callbacks
-            var frontend_count = 0;
-            function frontend_temp_click() {
-                frontend_count += 1;
-                document.getElementById("frontend_temp").textContent = frontend_count;
-            };
-            async function frontend_perm_click() {
-                var count = await frontend_perm_load();
-                count += 1;
-                fetch(window_url() + "/bag/v1.0/set/quickstart_frontend_perm_count", {
-                    method: "post",
+        <!-- Control Panel -->
+        <div class="row">
+            <div class="col-12">
+                <div class="control-panel">
+                    <h3><i class="bi bi-sliders"></i> Thruster Control</h3>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="dutyCycle" class="form-label">Duty Cycle (%)</label>
+                            <input type="range" class="form-range" id="dutyCycle" min="0" max="100" value="63.27" step="0.01">
+                            <div class="text-center">
+                                <span id="dutyCycleValue" class="sensor-value">63.27%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="testDuration" class="form-label">Test Duration (seconds)</label>
+                            <input type="number" class="form-control" id="testDuration" value="10" min="1" max="300">
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-success btn-lg" onclick="startThruster()">
+                                    <i class="bi bi-play-circle"></i> Start Thruster
+                                </button>
+                                <button class="btn btn-danger btn-lg" onclick="stopThruster()">
+                                    <i class="bi bi-stop-circle"></i> Stop Thruster
+                                </button>
+                                <button class="btn btn-primary btn-lg" onclick="startTest()">
+                                    <i class="bi bi-record-circle"></i> Start Test
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Panel -->
+        <div class="row">
+            <div class="col-12">
+                <div class="sensor-panel">
+                    <h3><i class="bi bi-info-circle"></i> System Status</h3>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h5>Thruster Status</h5>
+                                <div class="status-indicator status-stopped" id="thrusterStatus"></div>
+                                <span id="thrusterStatusText">Stopped</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h5>Navigator Status</h5>
+                                <div class="status-indicator status-running" id="navigatorStatus"></div>
+                                <span id="navigatorStatusText">Running</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h5>Power Supply</h5>
+                                <div class="status-indicator status-error" id="powerStatus"></div>
+                                <span id="powerStatusText">Disconnected</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h5>Force Sensor</h5>
+                                <div class="status-indicator status-error" id="forceStatus"></div>
+                                <span id="forceStatusText">Disconnected</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sensor Data -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="sensor-panel">
+                    <h4><i class="bi bi-speedometer2"></i> RPM</h4>
+                    <div class="text-center">
+                        <span id="rpmValue" class="sensor-value">0</span>
+                        <div class="text-muted">RPM</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="sensor-panel">
+                    <h4><i class="bi bi-lightning"></i> Power</h4>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <span id="voltageValue" class="sensor-value">0.0</span>
+                            <div class="text-muted">V</div>
+                        </div>
+                        <div class="col-6">
+                            <span id="currentValue" class="sensor-value">0.0</span>
+                            <div class="text-muted">A</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="sensor-panel">
+                    <h4><i class="bi bi-arrow-down-circle"></i> Force</h4>
+                    <div class="text-center">
+                        <span id="forceValue" class="sensor-value">0.0</span>
+                        <div class="text-muted">N</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="row">
+            <div class="col-12">
+                <div class="sensor-panel">
+                    <h3><i class="bi bi-graph-up"></i> Test Results</h3>
+                    <div id="testResults">
+                        <p class="text-muted text-center">No tests run yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let thrusterRunning = false;
+        let testRunning = false;
+        let updateInterval;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus();
+            startDataUpdates();
+            
+            // Duty cycle slider
+            document.getElementById('dutyCycle').addEventListener('input', function() {
+                document.getElementById('dutyCycleValue').textContent = this.value + '%';
+            });
+        });
+
+        // API functions
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method: method,
                     headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        value: count
-                    })
-                });
-                document.getElementById("frontend_perm").textContent = count;
-            };
-            async function backend_temp_click() {
-                document.getElementById("backend_temp").textContent = (await (await fetch("/temp_count")).json())["value"];
-            };
-            async function backend_perm_click() {
-                document.getElementById("backend_perm").textContent = (await (await fetch("/persistent_count")).json())["value"];
-            };
+                        'Content-Type': 'application/json',
+                    }
+                };
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                const response = await fetch(endpoint, options);
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                return { status: 'error', message: error.message };
+            }
+        }
 
-            // load frontend-triggered persistent state
-            document.getElementById("frontend_perm").textContent = frontend_perm_load();
-            // don't load backend-triggered persistent state, because doing so counts as a click
-        </script>
-    </head>
-    <body>
-        <h1>Quick Start Functionalities</h1>
-        <button type="button" onclick="frontend_temp_click()">Frontend Temporary</button>
-        <p>Clicks: <a id="frontend_temp">0</a></p>
-        <button type="button" onclick="frontend_perm_click()">Frontend Persistent</button>
-        <p>Clicks: <a id="frontend_perm">?</a></p>
-        <button type="button" onclick="backend_temp_click()">Backend Temporary</button>
-        <p>Clicks: <a id="backend_temp">0</a></p>
-        <button type="button" onclick="backend_perm_click()">Backend Persistent</button>
-        <p>Clicks: <a id="backend_perm">?</a></p>
-    </body>
+        // Control functions
+        async function startThruster() {
+            const dutyCycle = parseFloat(document.getElementById('dutyCycle').value) / 100;
+            const result = await apiCall('/thruster/start', 'POST', { duty_cycle: dutyCycle });
+            
+            if (result.status === 'success') {
+                thrusterRunning = true;
+                updateThrusterStatus();
+                showAlert('Thruster started successfully!', 'success');
+            } else {
+                showAlert('Failed to start thruster: ' + result.message, 'danger');
+            }
+        }
+
+        async function stopThruster() {
+            const result = await apiCall('/thruster/stop', 'POST');
+            
+            if (result.status === 'success') {
+                thrusterRunning = false;
+                updateThrusterStatus();
+                showAlert('Thruster stopped successfully!', 'success');
+            } else {
+                showAlert('Failed to stop thruster: ' + result.message, 'danger');
+            }
+        }
+
+        async function startTest() {
+            if (testRunning) {
+                showAlert('Test already running!', 'warning');
+                return;
+            }
+
+            const duration = parseInt(document.getElementById('testDuration').value);
+            const dutyCycle = parseFloat(document.getElementById('dutyCycle').value) / 100;
+            
+            testRunning = true;
+            document.querySelector('button[onclick="startTest()"]').disabled = true;
+            document.querySelector('button[onclick="startTest()"]').innerHTML = '<i class="bi bi-hourglass-split"></i> Test Running...';
+            
+            const result = await apiCall('/test/start', 'POST', { 
+                duration: duration, 
+                duty_cycle: dutyCycle 
+            });
+            
+            if (result.status === 'success') {
+                showAlert(`Test completed! Collected ${result.data_points} data points.`, 'success');
+                updateTestResults(result);
+            } else {
+                showAlert('Test failed: ' + result.message, 'danger');
+            }
+            
+            testRunning = false;
+            document.querySelector('button[onclick="startTest()"]').disabled = false;
+            document.querySelector('button[onclick="startTest()"]').innerHTML = '<i class="bi bi-record-circle"></i> Start Test';
+        }
+
+        // Status update functions
+        async function updateStatus() {
+            const status = await apiCall('/status');
+            if (status.status === 'success') {
+                document.getElementById('navigatorStatusText').textContent = 'Running';
+                document.getElementById('navigatorStatus').className = 'status-indicator status-running';
+            }
+        }
+
+        function updateThrusterStatus() {
+            const statusIndicator = document.getElementById('thrusterStatus');
+            const statusText = document.getElementById('thrusterStatusText');
+            
+            if (thrusterRunning) {
+                statusIndicator.className = 'status-indicator status-running';
+                statusText.textContent = 'Running';
+            } else {
+                statusIndicator.className = 'status-indicator status-stopped';
+                statusText.textContent = 'Stopped';
+            }
+        }
+
+        // Data update functions
+        function startDataUpdates() {
+            updateInterval = setInterval(async () => {
+                await updateSensorData();
+            }, 1000);
+        }
+
+        async function updateSensorData() {
+            // Update RPM
+            const rpmData = await apiCall('/sensors/rpm');
+            if (rpmData.status === 'success') {
+                document.getElementById('rpmValue').textContent = Math.round(rpmData.rpm);
+            }
+
+            // Update power
+            const powerData = await apiCall('/sensors/power');
+            if (powerData.status === 'success') {
+                document.getElementById('voltageValue').textContent = powerData.voltage.toFixed(2);
+                document.getElementById('currentValue').textContent = powerData.current.toFixed(2);
+                
+                // Update power status
+                const powerStatus = document.getElementById('powerStatus');
+                const powerStatusText = document.getElementById('powerStatusText');
+                if (powerData.voltage > 0) {
+                    powerStatus.className = 'status-indicator status-running';
+                    powerStatusText.textContent = 'Connected';
+                } else {
+                    powerStatus.className = 'status-indicator status-error';
+                    powerStatusText.textContent = 'Disconnected';
+                }
+            }
+
+            // Update force
+            const forceData = await apiCall('/sensors/force');
+            if (forceData.status === 'success' && forceData.force !== null) {
+                document.getElementById('forceValue').textContent = forceData.force.toFixed(2);
+                
+                // Update force status
+                const forceStatus = document.getElementById('forceStatus');
+                const forceStatusText = document.getElementById('forceStatusText');
+                forceStatus.className = 'status-indicator status-running';
+                forceStatusText.textContent = 'Connected';
+            } else {
+                const forceStatus = document.getElementById('forceStatus');
+                const forceStatusText = document.getElementById('forceStatusText');
+                forceStatus.className = 'status-indicator status-error';
+                forceStatusText.textContent = 'Disconnected';
+            }
+        }
+
+        function updateTestResults(result) {
+            const testResults = document.getElementById('testResults');
+            testResults.innerHTML = `
+                <div class="alert alert-success">
+                    <h5>Test Completed Successfully!</h5>
+                    <p><strong>Duration:</strong> ${result.duration} seconds</p>
+                    <p><strong>Data Points:</strong> ${result.data_points}</p>
+                    <p><strong>File:</strong> ${result.filename}</p>
+                    <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
+                </div>
+            `;
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.row'));
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
 </html>

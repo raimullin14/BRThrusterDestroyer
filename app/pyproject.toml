@@ -1,14 +1,18 @@
 [project]
-name = "quickstart"
-version = "0.0.2"
-description = "BlueOS QuickStart Example Extension"
+name = "br-thruster-destroyer"
+version = "0.0.1"
+description = "BlueOS Thruster Testing and Data Logging Extension"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "requests",
     "litestar[standard]",
+    "minimalmodbus",
+    "bluerobotics-navigator",
+    "gpiozero",
+    "requests",
+    "pyserial",
 ]
 
