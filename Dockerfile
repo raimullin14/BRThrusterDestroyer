@@ -32,24 +32,15 @@ ARG IMAGE_NAME
 
 LABEL permissions='\
 {\
-  "ExposedPorts": {\
-    "8000/tcp": {}\
-  },\
+  "NetworkMode": "host",\
   "HostConfig": {\
-    "Binds":["/usr/blueos/extensions/$IMAGE_NAME:/app"],\
-    "ExtraHosts": ["host.docker.internal:host-gateway"],\
-    "PortBindings": {\
-      "8000/tcp": [\
-        {\
-          "HostPort": ""\
-        }\
-      ]\
-    },\
-    "Devices": [\
-      "/dev/ttyUSB0:/dev/ttyUSB0",\
-      "/dev/gpiomem:/dev/gpiomem"\
+    "Privileged": true,\
+    "Binds": [\
+      "/usr/blueos/extensions/jupyter/root:/root:rw",\
+      "/dev:/dev:rw"\
     ],\
-    "Privileged": true\
+    "Privileged": true,\
+    "NetworkMode": "host"\
   }\
 }'
 
