@@ -40,11 +40,9 @@ LABEL permissions='\
   "HostConfig": {\
     "Privileged": true,\
     "Binds": [\
-      "/usr/blueos/extensions/jupyter/root:/root:rw",\
+      "/usr/blueos/extensions/brthrusterdestroyer/root:/root:rw",\
       "/dev:/dev:rw"\
-    ],\
-    "Privileged": true,\
-    "NetworkMode": "host"\
+    ]\
   }\
 }'
 
