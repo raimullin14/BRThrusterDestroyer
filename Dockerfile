@@ -13,16 +13,20 @@ RUN apt-get update && apt-get install -y \
 # Copy the application
 COPY app /app
 
-# Install Python dependencies first (without the problematic ones)
+# Install Python dependencies
 RUN python -m pip install --upgrade pip && \
-    python -m pip install litestar[standard] minimalmodbus gpiozero requests pyserial
+    python -m pip install flask flask-cors minimalmodbus gpiozero requests pyserial
 
 # Install Blue Robotics Navigator from source (if available)
 RUN python -m pip install git+https://github.com/bluerobotics/blueos-python.git#subdirectory=blueos-python-navigator || \
     echo "Navigator package not available, will use fallback methods"
 
-# Install the app in development mode
-RUN python -m pip install -e /app
+# Copy the app files directly instead of installing in editable mode
+RUN cp -r /app/backend /app/backend_copy && \
+    cp -r /app/frontend /app/frontend_copy && \
+    cp -r /app/static /app/static_copy && \
+    cp /app/main.py /app/main_copy.py && \
+    cp /app/pyproject.toml /app/pyproject_copy.toml
 
 EXPOSE 8000/tcp
 
@@ -69,4 +73,6 @@ LABEL links='{\
     }'
 LABEL requirements="core >= 1.1"
 
-ENTRYPOINT ["litestar", "run", "--host", "0.0.0.0"]
+# Set the working directory and run the Flask app
+WORKDIR /app
+CMD ["python", "main_copy.py"]
