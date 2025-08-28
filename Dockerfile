@@ -28,7 +28,7 @@ RUN cp -r /app/backend /app/backend_copy && \
     cp /app/main.py /app/main_copy.py && \
     cp /app/pyproject.toml /app/pyproject_copy.toml
 
-EXPOSE 8000/tcp
+EXPOSE 8001/tcp
 
 LABEL version="0.0.1"
 
