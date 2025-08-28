@@ -1,0 +1,44 @@
+.status-indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.status-running { 
+    background-color: #28a745; 
+}
+
+.status-stopped { 
+    background-color: #dc3545; 
+}
+
+.status-error { 
+    background-color: #ffc107; 
+}
+
+.sensor-value {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.control-panel {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.sensor-panel {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

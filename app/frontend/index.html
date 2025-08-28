@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BR Thruster Destroyer</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div id="app">
+        <div class="container-fluid mt-4">
+            <div class="row">
+                <div class="col-12">
+                    <h1 class="text-center mb-4">
+                        <i class="bi bi-propeller"></i> BR Thruster Destroyer
+                    </h1>
+                    <p class="text-center text-muted">BlueOS Extension for Thruster Testing and Data Logging</p>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="control-panel">
+                        <h3><i class="bi bi-sliders"></i> Thruster Control</h3>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="dutyCycle" class="form-label">Duty Cycle (%)</label>
+                                <input type="range" class="form-range" id="dutyCycle" v-model="dutyCycle" min="0" max="100" step="0.01">
+                                <div class="text-center">
+                                    <span class="sensor-value">{{ dutyCycle }}%</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="testDuration" class="form-label">Test Duration (seconds)</label>
+                                <input type="number" class="form-control" id="testDuration" v-model="testDuration" min="1" max="300">
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-success btn-lg" @click="startThruster" :disabled="thrusterRunning">
+                                        <i class="bi bi-play-circle"></i> Start Thruster
+                                    </button>
+                                    <button class="btn btn-danger btn-lg" @click="stopThruster" :disabled="!thrusterRunning">
+                                        <i class="bi bi-stop-circle"></i> Stop Thruster
+                                    </button>
+                                    <button class="btn btn-primary btn-lg" @click="startTest" :disabled="testRunning">
+                                        <i class="bi bi-record-circle"></i> {{ testRunning ? 'Test Running...' : 'Start Test' }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Panel -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="sensor-panel">
+                        <h3><i class="bi bi-info-circle"></i> System Status</h3>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h5>Thruster Status</h5>
+                                    <div class="status-indicator" :class="thrusterRunning ? 'status-running' : 'status-stopped'"></div>
+                                    <span>{{ thrusterRunning ? 'Running' : 'Stopped' }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h5>Backend Status</h5>
+                                    <div class="status-indicator status-running"></div>
+                                    <span>Running</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h5>Power Supply</h5>
+                                    <div class="status-indicator" :class="powerConnected ? 'status-running' : 'status-error'"></div>
+                                    <span>{{ powerConnected ? 'Connected' : 'Disconnected' }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h5>Force Sensor</h5>
+                                    <div class="status-indicator" :class="forceConnected ? 'status-running' : 'status-error'"></div>
+                                    <span>{{ forceConnected ? 'Connected' : 'Disconnected' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sensor Data -->
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="sensor-panel">
+                        <h4><i class="bi bi-speedometer2"></i> RPM</h4>
+                        <div class="text-center">
+                            <span class="sensor-value">{{ Math.round(sensorData.rpm) }}</span>
+                            <div class="text-muted">RPM</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="sensor-panel">
+                        <h4><i class="bi bi-lightning"></i> Power</h4>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <span class="sensor-value">{{ sensorData.voltage.toFixed(2) }}</span>
+                                <div class="text-muted">V</div>
+                            </div>
+                            <div class="col-6">
+                                <span class="sensor-value">{{ sensorData.current.toFixed(2) }}</span>
+                                <div class="text-muted">A</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="sensor-panel">
+                        <h4><i class="bi bi-arrow-down-circle"></i> Force</h4>
+                        <div class="text-center">
+                            <span class="sensor-value">{{ sensorData.force.toFixed(2) }}</span>
+                            <div class="text-muted">N</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Results -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="sensor-panel">
+                        <h3><i class="bi bi-graph-up"></i> Test Results</h3>
+                        <div v-if="testResults">
+                            <div class="alert alert-success">
+                                <h5>Test Completed Successfully!</h5>
+                                <p><strong>Duration:</strong> {{ testResults.duration }} seconds</p>
+                                <p><strong>Data Points:</strong> {{ testResults.data_points }}</p>
+                                <p><strong>File:</strong> {{ testResults.filename }}</p>
+                                <p><strong>Timestamp:</strong> {{ new Date().toLocaleString() }}</p>
+                            </div>
+                        </div>
+                        <div v-else>
+                            <p class="text-muted text-center">No tests run yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
