@@ -28,7 +28,7 @@ RUN cp -r /app/backend /app/backend_copy && \
     cp /app/main.py /app/main_copy.py && \
     cp /app/pyproject.toml /app/pyproject_copy.toml
 
-EXPOSE 8001/tcp
+EXPOSE 8080/tcp
 
 LABEL version="0.0.1"
 
@@ -36,15 +36,22 @@ ARG IMAGE_NAME
 
 LABEL permissions='\
 {\
-  "NetworkMode": "host",\
+  "ExposedPorts": {\
+    "8080/tcp": {}\
+  },\
   "HostConfig": {\
     "Privileged": true,\
     "Binds": [\
       "/usr/blueos/extensions/brthrusterdestroyer/root:/root:rw",\
       "/dev:/dev:rw"\
     ],\
-    "Privileged": true,\
-    "NetworkMode": "host"\
+    "PortBindings": {\
+      "8080/tcp": [\
+        {\
+          "HostPort": "8080"\
+        }\
+      ]\
+    }\
   }\
 }'
 
