@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
 import os
 
@@ -12,6 +12,20 @@ app = create_app()
 @app.route('/register_service')
 def serve_register_service():
     return send_from_directory('static', 'register_service')
+
+# Serve the register_service as JSON (alternative format)
+@app.route('/register_service.json')
+def serve_register_service_json():
+    return jsonify({
+        "name": "BR Thruster Destroyer",
+        "description": "Thruster Testing and Data Logging Extension for BlueOS",
+        "icon": "mdi-propeller",
+        "company": "Blue Robotics",
+        "version": "0.0.1",
+        "webpage": "https://github.com/raimullin14/BRThrusterDestroyer",
+        "api": "/docs",
+        "route": "/"
+    })
 
 # Serve the frontend
 @app.route('/')
