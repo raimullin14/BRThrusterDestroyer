@@ -8,7 +8,7 @@ from backend import create_app
 # Create the Flask app
 app = create_app()
 
-# Serve the register_service file (BlueOS needs this)
+# Serve the register_service file at the root level (BlueOS needs this)
 @app.route('/register_service')
 def serve_register_service():
     return send_from_directory('static', 'register_service')
