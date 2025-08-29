@@ -53,7 +53,7 @@ createApp({
 
         async startThruster() {
             const dutyCycle = parseFloat(this.dutyCycle) / 100;
-            const result = await this.apiCall('/thruster/start', 'POST', { duty_cycle: dutyCycle });
+            const result = await this.apiCall('/api/thruster/start', 'POST', { duty_cycle: dutyCycle });
             
             if (result.status === 'success') {
                 this.thrusterRunning = true;
@@ -105,7 +105,7 @@ createApp({
 
         async updateSensorData() {
             // Update RPM
-            const rpmData = await this.apiCall('/sensors/rpm');
+            const rpmData = await this.apiCall('/api/sensors/rpm');
             if (rpmData.status === 'success') {
                 this.sensorData.rpm = rpmData.rpm;
             }
