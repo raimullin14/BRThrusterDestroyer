@@ -17,10 +17,9 @@ COPY app /app
 RUN python -m pip install --upgrade pip && \
     python -m pip install flask flask-cors minimalmodbus gpiozero requests pyserial
 
-# Install Blue Robotics packages using the working Jupyter method
-RUN pip install --no-cache-dir --verbose \
-    bluerobotics-ping \
-    bluerobotics-navigator
+# Install Blue Robotics Navigator from source (if available)
+RUN python -m pip install git+https://github.com/bluerobotics/blueos-python.git#subdirectory=blueos-python-navigator || \
+    echo "Navigator package not available, will use fallback methods"
 
 # Copy the app files directly instead of installing in editable mode
 RUN cp -r /app/backend /app/backend_copy && \
