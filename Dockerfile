@@ -21,12 +21,13 @@ RUN python -m pip install --upgrade pip && \
 RUN python -m pip install git+https://github.com/bluerobotics/blueos-python.git#subdirectory=blueos-python-navigator || \
     echo "Navigator package not available, will use fallback methods"
 
-# Copy the app files directly instead of installing in editable mode
+# Copy the app files and ensure register_service is at root
 RUN cp -r /app/backend /app/backend_copy && \
     cp -r /app/frontend /app/frontend_copy && \
     cp -r /app/static /app/static_copy && \
     cp /app/main.py /app/main_copy.py && \
-    cp /app/pyproject.toml /app/pyproject_copy.toml
+    cp /app/pyproject.toml /app/pyproject_copy.toml && \
+    cp /app/register_service /app/register_service_copy
 
 EXPOSE 8080/tcp
 

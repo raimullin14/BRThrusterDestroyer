@@ -1,0 +1,10 @@
+{
+    "name": "BR Thruster Destroyer",
+    "description": "Thruster Testing and Data Logging Extension for BlueOS",
+    "icon": "mdi-propeller",
+    "company": "Blue Robotics",
+    "version": "0.0.1",
+    "webpage": "https://github.com/raimullin14/BRThrusterDestroyer",
+    "api": "/docs",
+    "route": "/"
+}
