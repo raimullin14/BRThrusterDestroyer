@@ -5,6 +5,9 @@ import os
 # Create the main Flask app
 app = Flask(__name__)
 
+# Enable CORS
+CORS(app)
+
 # Serve the register_service file from root (BlueOS needs this)
 @app.route('/register_service')
 def serve_register_service():
@@ -15,12 +18,18 @@ def serve_register_service():
 def serve_frontend():
     return send_from_directory('frontend', 'index.html')
 
-# Import and register the backend app AFTER defining frontend routes
-from backend import create_app
-backend_app = create_app()
+# Import the backend routes and register them directly
+from backend.routes import thruster, sensors, tests
 
-# Register backend routes with a prefix to avoid conflicts
-app.register_blueprint(backend_app, url_prefix='/api')
+# Register the backend blueprints with /api prefix
+app.register_blueprint(thruster.bp, url_prefix='/api/thruster')
+app.register_blueprint(sensors.bp, url_prefix='/api/sensors')
+app.register_blueprint(tests.bp, url_prefix='/api/tests')
+
+# Add a simple status endpoint
+@app.route('/api/status')
+def api_status():
+    return {"status": "success", "message": "Flask backend running"}
 
 @app.route('/<path:path>')
 def serve_static(path):
